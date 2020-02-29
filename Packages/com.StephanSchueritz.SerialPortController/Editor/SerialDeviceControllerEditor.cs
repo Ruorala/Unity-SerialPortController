@@ -27,7 +27,7 @@ public class SerialDeviceControllerEditor : Editor
         if(t.GetFirstWriteQueueMessage(out string firstWriteMessage))
             this.firstWriteMessage = firstWriteMessage;
 
-        EditorGUILayout.LabelField(string.Format("Threading", t.ValueListeners.Length), EditorStyles.boldLabel);
+        EditorGUILayout.LabelField(string.Format("Threading ({0} '{1}')", t.Thread != null, t.Thread != null ? t.Thread.Name : "None"), EditorStyles.boldLabel);
         EditorGUILayout.LabelField(string.Format("Read Queue Size: {0} ({1})", t.SerialPortReadQueueSize, this.firstReadMessage));
         EditorGUILayout.LabelField(string.Format("Write Queue Size: {0} ({1})", t.SerialPortWriteQueueSize, this.firstWriteMessage));
 

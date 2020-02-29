@@ -41,6 +41,7 @@ public class SerialDeviceController : MonoBehaviour
     public int threadTimeout = 10;
     public int processReadQueueInterval = 5;
     public int processWriteQueueInterval = 5;
+    public bool startOnAwake = true;
     public bool debug = false;
 
     public ValueListener[] valueListeners;
@@ -59,6 +60,7 @@ public class SerialDeviceController : MonoBehaviour
     public int SerialPortReadQueueSize => serialPortReadQueue.Count;
     public int SerialPortWriteQueueSize => serialPortWriteQueue.Count;
 
+    public Thread Thread => serialReadThread;
     public ValueListener[] ValueListeners => valueListeners;
 
     #endregion
@@ -68,7 +70,8 @@ public class SerialDeviceController : MonoBehaviour
     private void Start()
     {
         // Open Serial Port
-        Open();
+        if(startOnAwake)
+            Open();
     }
 
     private void OnApplicationQuit()
@@ -102,28 +105,60 @@ public class SerialDeviceController : MonoBehaviour
 
     #region Serial Port
 
-    public void Open()
+    public bool Open()
     {
-        // Open
-        sp = new SerialPort(comPortString, frequence, Parity.None, 8, StopBits.One);
-        sp.ReadTimeout = threadTimeout;
-        sp.Open();
+        if(sp != null && sp.IsOpen)
+        {
+            Debug.Log("'SerialDeviceController': is already open!", this);
+            return false;
+        }
 
-        if(sp.IsOpen)
-            Debug.Log("Serial port is open!");
+        // --- Open SerialPort ---
+        try
+        {
+            sp = new SerialPort(comPortString, frequence, Parity.None, 8, StopBits.One);
+            sp.ReadTimeout = threadTimeout;
+            sp.Open();
+        }
+        catch(System.IO.IOException ex)
+        {
+            Debug.Log(ex.ToString());
+            sp = null;
+        }
 
-        // Start Sync Read
-        serialReadThread = new Thread(SerialPortThread);
-        serialReadThread.Name = name;
-        serialReadThread.Start();
+        if(sp != null && sp.IsOpen)
+        {
+            Debug.Log("'SerialDeviceController': port is open!", this);
+        }
+        else
+        {
+            sp = null;
+            return false;
+        }
+
+        // --- Open Thread ---
+        if(serialReadThread == null || !serialReadThread.IsAlive)
+        {
+            serialReadThread = new Thread(SerialPortThread);
+            serialReadThread.Name = name + GetInstanceID();
+            serialReadThread.Start();
+        }
+        
+        return true;
     }
 
     public void Close()
     {
-        sp.Close();
+        // --- Close SerialPort ---
+        if(sp != null && sp.IsOpen)
+            sp.Close();
 
-        serialReadThread.Interrupt();
-        serialReadThread.Join();
+        // --- Close Thread ---
+        if(serialReadThread != null)
+        {
+            serialReadThread.Interrupt();
+            serialReadThread.Join();
+        }
     }
 
     #endregion

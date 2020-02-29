@@ -1,7 +1,0 @@
-{
-    "name": "StephanSchueritz.SerialPortController",
-    "references": [ ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-	"allowUnsafeCode": true
-}
